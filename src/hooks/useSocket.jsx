@@ -1,4 +1,5 @@
-const url = "ws://localhost:8000"
+const base = import.meta.env.VITE_API_URL;
+const url = base.replace("https", "wss");
 import { useRef } from "react"
 import { useState,useEffect } from "react"
 const useSocket = (onMessage) => {
