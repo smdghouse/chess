@@ -1,5 +1,8 @@
 const base = import.meta.env.VITE_API_URL;
-const url = base.replace("https", "wss");
+const url = base.startsWith("https")
+  ? base.replace("https", "wss")
+  : base.replace("http", "ws");
+console.log("wsUrl is ", url)
 import { useRef } from "react"
 import { useState,useEffect } from "react"
 const useSocket = (onMessage) => {
