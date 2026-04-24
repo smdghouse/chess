@@ -1,134 +1,128 @@
-import { useState } from "react";
-import boardImg from "../assets/board.png";
-import { useNavigate } from "react-router-dom"
-import api from "../api /axios"
-import toast from "react-hot-toast";
-export default function ChessHome() {
-  const navigate = useNavigate()
-  const [showauth, setShowauth] = useState(false)
-  const [isSignup, setIsSignup] = useState(false)
-  const [form, setForm] = useState({
-    userName: ""
-    , emailorusername: ""
-    , email: ""
-    , password: ""
-  })
+import bgImage from "../assets/board.png";
+import { FaRobot } from "react-icons/fa";
+import { BsFillPeopleFill } from "react-icons/bs";
+import { MdOutlineLiveTv } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/navbar";
 
+export default function Home() {
+  const navigate = useNavigate();
 
-  //this is onchangehandler 
-  const handlechange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
-
-  //this is the login handler 
-  const handlelogin = async () => {
-   try {
-    const res = await api.post('/auth/login',{
-      emailorusername:form.emailorusername,
-      password:form.password
-    })
-    console.log(res)
-    toast.success(res.data.message)
-    console.log(res.data.userid)
-    localStorage.setItem("token",res.data.token)
-   localStorage.setItem("userid",res.data.userid)
-   navigate('/game')
-
-   } catch (error) {
-    const message = error.response?.data?.message || 'something went wrong'
-      toast.error(message)
-      console.log(error)
-   }
-   
-  }
-
-
-  // this is the signup handler 
-  const handlesignup = async () => {
-    try {
-      console.log(form.userName,form.userName,form.password)
-     const res = await api.post('/auth/register',{
-      userName:form.userName,
-      email:form.email
-      ,password:form.password
-     })
-     console.log(res)
-     toast.success(res.data.message)
-     console.log("this is res data ",res.data)
-     localStorage.setItem("token",res.data.token)
-     localStorage.setItem("userid",res.data.userid)
-     navigate('/game')
-    } catch (error) {
-      const message = error.response?.data?.message || 'something went wrong'
-      toast.error(message)
-      console.log(error)
-    }
-    }
   return (
-    <div className="text-center text-white w-full min-h-screen bg-black
-    ">
+    <div
+      className="min-h-screen w-full bg-no-repeat bg-center relative"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+      }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/50"></div>
+     <div className="relative z-50">
+  <Navbar />
+</div>
+      <div className="relative z-10 px-6 md:px-12 py-8">
 
+        {/* 🔷 HERO */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-bold text-white">
+            Welcome to <span className="text-purple-500">ChessMaster</span>
+          </h1>
 
-      {/* Title */}
-      <h1 className="text-6xl font-bold mb-6 tracking-wider text-[#E5D2A9]">
-        CHESS
-      </h1>
-      <div className="flex justify-center items-center w-full h-full">
-        {/*this is the main div */}
-        {/* 3D Board */}
-        <div className="flex w-[40%] justify-start mb-10">
-          <img
-            src={boardImg}
-            alt="3D Chessboard"
-            className="w-[650px] "
-          />
+          <p className="text-gray-400 mt-4">
+            Choose your mode and start your chess journey
+          </p>
         </div>
 
-        {/* Buttons */}
-        {!showauth && <div className="flex-col justify-center gap-10 w-[60%] h-full text-[#E5D2A9] text-xl font-semibold ">
-          <h1 className="px-8  py-3">
-            Welcome to your new chess arena.<br />
-            Think deeper. Move smarter. Win bigger.
-          </h1>
-          <button onClick={() => {
-            setShowauth(true)
-          }} className="px-8 py-3 border border-[#8B6F4E] rounded-lg text-xl font-semibold text-[#E5D2A9] hover:bg-[#8B6F4E]/20 transition">
-            Get started
-          </button>
-        </div>}
-        {
-          showauth && <div className="bg-[#1C1C1C] p-8 rounded-xl w-[350px] shadow-lg mt-4 ">
-            <h2 className="text-2xl font-semibold mb-6">
-              {
-                isSignup ? "Register " : "Login"
-              }
+        {/* 🔷 CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          {/* AI */}
+          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl border border-white/20 text-center">
+            <div className="bg-purple-600 p-4 rounded-xl inline-block mb-4">
+              <FaRobot className="text-white" size={28} />
+            </div>
+
+            <h2 className="text-xl font-semibold mb-2 text-white">
+              Play Against Computer
             </h2>
-            {
-              // this username for the signup 
-              isSignup && <input name="userName" placeholder="userName"     className="w-full p-3 mb-3 rounded bg-gray-700" onChange={handlechange}/>
-                }
+            <p className="text-gray-400 mb-6">
+              Challenge the AI in different difficulty levels
+            </p>
 
-                {
-                  // here if the signup then email else login ? emailorusername
-                  isSignup ? <input name="email" placeholder="email" className="w-full p-3 mb-3 rounded bg-gray-700" onChange={handlechange} />:<input
-                  name="emailorusername" placeholder="emailorUsername" type="text" className="w-full p-3 mb-3 rounded bg-gray-700" onChange={handlechange}/>
-                }
-                <input type="password" name="password" placeholder="password" className="w-full p-3 mb-3 rounded bg-gray-700" onChange={handlechange} />
-                <button onClick={isSignup?handlesignup:handlelogin}  className="w-full bg-blue-600 py-3 rounded-lg mb-4">
-
-                  {isSignup ? "register":'login'}
-                </button>
-                <div className="text-center text-gray-400 mb-4">
-                  or
-                </div>
-                <button onClick={()=>setIsSignup(!isSignup)}>
-                  {isSignup?"already have account ? Login":"create account"}
-                </button>
+            <button
+              onClick={() => navigate("/game")}
+              className="w-full bg-purple-600 text-white hover:bg-purple-700 py-3 rounded-lg"
+            >
+              Play Now
+            </button>
           </div>
-        }
 
+          {/* PLAYER */}
+          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl border border-white/20 text-center">
+            <div className="bg-green-600 p-4 rounded-xl inline-block mb-4">
+              <BsFillPeopleFill className="text-white" size={28} />
+            </div>
+
+            <h2 className="text-xl font-semibold mb-2 text-white">
+              Play Against Player
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Play real-time chess with players around the world
+            </p>
+
+            <button
+              onClick={() => navigate("/game")}
+              className="w-full text-white bg-green-600 hover:bg-green-700 py-3 rounded-lg"
+            >
+              Find Opponent
+            </button>
+          </div>
+
+          {/* STREAM */}
+          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl border border-white/20 text-center">
+            <div className="bg-orange-500 p-4 rounded-xl inline-block mb-4">
+              <MdOutlineLiveTv className="text-white" size={28} />
+            </div>
+
+            <h2 className="text-xl font-semibold mb-2 text-white">
+              Watch Streaming Games
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Watch live games from top players and streamers
+            </p>
+
+            <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 text-white rounded-lg">
+              Watch Now
+            </button>
+          </div>
+        </div>
+
+        {/* 🔷 FEATURES */}
+        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+
+          <div className="bg-white/10 p-6 rounded-xl">
+            <h3 className="text-purple-400 font-semibold">Improve Skills</h3>
+            <p className="text-gray-400 text-sm">Practice daily</p>
+          </div>
+
+          <div className="bg-white/10 p-6 rounded-xl">
+            <h3 className="text-green-400 font-semibold">Community</h3>
+            <p className="text-gray-400 text-sm">Play worldwide</p>
+          </div>
+
+          <div className="bg-white/10 p-6 rounded-xl">
+            <h3 className="text-blue-400 font-semibold">Progress</h3>
+            <p className="text-gray-400 text-sm">Track your games</p>
+          </div>
+
+          <div className="bg-white/10 p-6 rounded-xl">
+            <h3 className="text-yellow-400 font-semibold">Fair Play</h3>
+            <p className="text-gray-400 text-sm">Secure gameplay</p>
+          </div>
+
+        </div>
       </div>
-
     </div>
   );
 }

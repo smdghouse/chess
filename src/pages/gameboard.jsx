@@ -2,6 +2,10 @@ import { useEffect, useState } from "react"
 import useSocket from "../hooks/useSocket"
 import Chessboard from "../components/Chessboard.jsx"
 import { Chess } from "chess.js"
+import ConnectingPage from "./connecting.jsx"
+import Navbar from "../components/navbar.jsx"
+import bgImage from "../assets/board.png"
+
 function Gameboard() {
   const [notstarted, setnotstarted] = useState(true)
   const [chess, setChess] = useState(new Chess())
@@ -14,264 +18,241 @@ function Gameboard() {
   const [gameover, setGameover] = useState(false)
   const [gamemsg, setGamemsg] = useState('')
   const [wait, setWait] = useState(false)
+
   const handlemessage = (message)=>{
-console.log(message)
-      switch (message.type) {
-        case "not_active_game":
-          console.log("game is not active")
-          break
-        case "reconnected": 
-          console.log("hello ma")
-          const restored = new Chess(message.fen);
+    switch (message.type) {
+      case "not_active_game":
+        break
 
-          setChess(restored);
-          setBoard(restored.board());
+      case "reconnected":
+        const restored = new Chess(message.fen)
+        setChess(restored)
+        setBoard(restored.board())
 
-          setMoveList(message.moves || []);
-          const lastfrom = message?.lastmove?.from
-          const lastto = message?.lastmove?.to
-          setPremove({prefrom:lastfrom,preto:lastto}); 
-          if(message.isCheck)
-          {
-            setKing_colour(message.turn);  
-          }else
-          {
-            setKing_colour('p');  
-          }
-                   // optional
-          setTurn(message.turn);
-          setColour(message.color);
+        setMoveList(message.moves || [])
+        setPremove({
+          prefrom: message?.lastmove?.from,
+          preto: message?.lastmove?.to
+        })
 
-          setGameover(false);
-          setGamemsg('');
-          setWait(false);
-          setnotstarted(false); 
+        setKing_colour(message.isCheck ? message.turn : 'p')
+        setTurn(message.turn)
+        setColour(message.color)
 
-          console.log("Game restored after reconnect");
-          break;
-        
+        setGameover(false)
+        setGamemsg('')
+        setWait(false)
+        setnotstarted(false)
+        break
 
-        case "waiting":
-          setWait(true)
-          break
-        case "game_over":
-          setGameover(true)
-          if (message.reason === "checkmate")
-            setGamemsg(`${message.winner} won `)
-          if (message.reason === "resign")
-            setGamemsg(`${message.winner} resign`)
-          setnotstarted(true)
-          break
+      case "waiting":
+        setWait(true)
+        break
 
-        case "move_made":
+      case "game_over":
+        setGameover(true)
+        if (message.reason === "checkmate")
+          setGamemsg(`${message.winner} won`)
+        if (message.reason === "resign")
+          setGamemsg(`${message.winner} resign`)
+        setnotstarted(true)
+        break
 
-          console.log("hello bachho ")
-          const movemade = message.move
-          const prefrom = movemade.from
-          const preto = movemade.to
-          setPremove({ prefrom, preto })
-          setChess(prev => {
-            const updated = new Chess(prev.fen());
+      case "move_made":
+        const movemade = message.move
+        setPremove({ prefrom: movemade.from, preto: movemade.to })
 
-            // Make the move and get SAN
-            const result = updated.move(movemade);
-            const san = result.san;  // ← This is "e4", "Nf3", "Bb5", "O-O", etc.
+        setChess(prev => {
+          const updated = new Chess(prev.fen())
+          updated.move(movemade)
+          setMoveList(message.movelist)
+          setBoard(updated.board())
+          setTurn(message.turn)
+          return updated
+        })
 
-            // Store SAN in your moveList
-            setMoveList(message.movelist);
-            setBoard(updated.board());
-            setTurn(message.turn);
-            return updated;
-          });
+        setKing_colour(message.check ? message.turn : 'p')
+        break
 
-          console.log("move has made")
-          console.log(chess.inCheck())
-          if (message.check) {
-            setKing_colour(message.turn)
-          }
-          else {
-            setKing_colour('p')
-          }
-          break
-        case "start_game":
-          const fresh = new Chess(message.fen);
-          setChess(fresh);
-          setBoard(fresh.board());
+      case "start_game":
+        const fresh = new Chess(message.fen)
+        setChess(fresh)
+        setBoard(fresh.board())
 
-          setMoveList([]);        // clear moves
-          setPremove({});         // clear highlights
-          setKing_colour('p');    // no check
-          setTurn('w');           // ALWAYS start from white
-          setColour(message.color);
+        setMoveList([])
+        setPremove({})
+        setKing_colour('p')
+        setTurn('w')
+        setColour(message.color)
 
-          setGameover(false);
-          setGamemsg('');
+        setGameover(false)
+        setGamemsg('')
+        setWait(false)
+        setnotstarted(false)
+        break
 
-          setWait(false);
-          setnotstarted(false);
-
-          console.log("new game started cleanly");
-          break
-        default:
-          break;
-      }
+      default:
+        break
+    }
   }
-   const {socket , reconnecting, reconnectingFailed, manualReconnect} = useSocket(handlemessage)
-  if (!socket || reconnecting)
-    return <div className="flex min-w-full min-h-screen items-center justify-center"> <h1 className=" text-5xl">
-      connecting.....!
-    </h1></div>
-  
+
+  const { socket, reconnecting, reconnectingFailed, manualReconnect } = useSocket(handlemessage)
+
+  if (!socket || reconnecting) return <ConnectingPage />
+
   return (
+    <div
+      className="h-screen w-full overflow-hidden relative text-white"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/60"></div>
 
-    <div className="flex h-screen min-w-full bg-white">
+      {/* Layout Wrapper */}
+      <div className="relative z-10 flex flex-col h-full">
 
-      {/* LEFT PANEL */}
-      <div className="flex items-center justify-center bg-slate-600 w-[60%] h-screen">
-        <Chessboard turn={turn} kingcolour={king_colour} board={board} socket={socket} chess={chess} premove={premove} colour={colour} />
-      </div>
-
-      {/* RIGHT PANEL */}
-      <div className="w-[40%] h-screen bg-slate-700 flex flex-col">
-
-        {/* STATUS BAR */}
-        <div className="p-4 text-white text-center border-b border-slate-500">
-          {wait && <p className="text-yellow-300">Waiting for opponent...</p>}
-          {!notstarted && !wait && <p>Game in progress</p>}
-          {notstarted && !wait && <p>Ready to start</p>}
+        {/* NAVBAR (fixed height) */}
+        <div className="shrink-0">
+          <Navbar theme="chess" />
         </div>
 
-        {/* MOVES LIST (SCROLLABLE) */}
-        <div className="flex-1 overflow-y-auto p-4 text-white">
-          {!notstarted && (
-            <h2 className="text-xl mb-4 text-center">Moves</h2>
-          )}
+        {/* MAIN AREA (IMPORTANT FIX) */}
+        <div className="flex flex-1 min-h-0 flex-col md:flex-row">
 
-          <div className="grid grid-cols-3 gap-y-2 text-center">
-            {moveList.map((sanMove, index) => {
-              if (index % 2 !== 0) return null;
-
-              return (
-                <div key={index} className="contents">
-                  <span className="font-semibold">
-                    {Math.floor(index / 2) + 1}.
-                  </span>
-                  <span>{sanMove}</span>
-                  <span>{moveList[index + 1] || ""}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ACTIONS (BOTTOM FIXED) */}
-        <div className="p-4 border-t border-slate-500 flex flex-col gap-3">
-
-          {/* START GAME */}
-          {notstarted && (
-            <button
-              className={`
-          px-4 py-2 rounded-lg transition
-          ${wait
-                  ? "bg-gray-400 text-gray-700 pointer-events-none"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-                }
-        `}
-              onClick={() => {
-                socket.send(JSON.stringify({
-                  type: "play_game",
-                  token: localStorage.getItem("token"),
-                }))
-              }}
-            >
-              {wait ? "Waiting..." : "Start Game"}
-            </button>
-          )}
-
-          {/* IN-GAME ACTIONS */}
-          {!notstarted && !gameover && (
-            <div className="flex gap-3 justify-center">
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() =>
-                  socket.send(JSON.stringify({ type: "resign" }))
-                  (console.log("resign sent to server"))
-                }
-              >
-                Resign
-              </button>
-              {// i will implement this draw button later 
-              }
-              {/* <button
-          className="px-4 py-2 bg-yellow-400 text-black rounded hover:bg-yellow-500"
-          onClick={() =>
-            socket.send(JSON.stringify({ type: "draw_request" }))
-          }
-        >
-          Draw
-        </button> */}
+          {/* BOARD */}
+          <div className="flex-[6] md:flex-[7] flex items-center justify-center p-2 min-h-0">
+            <div className="w-[90%] md:flex md:items-center md:justify-center max-w-[420px] md:max-w-none md:w-full">
+              <Chessboard
+                turn={turn}
+                kingcolour={king_colour}
+                board={board}
+                socket={socket}
+                chess={chess}
+                premove={premove}
+                colour={colour}
+              />
             </div>
-          )}
+          </div>
 
-        </div>
-      </div>
+          {/* PANEL */}
+          <div className="flex-[4] md:flex-[3] flex flex-col min-h-0 m-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl">
 
+            {/* STATUS */}
+            <div className="p-2 text-center border-b border-white/10 text-sm shrink-0">
+              {wait && <p className="text-yellow-400">Waiting for opponent...</p>}
+              {!notstarted && !wait && <p className="text-green-400">Game in progress</p>}
+              {notstarted && !wait && <p className="text-gray-300">Ready to start</p>}
+            </div>
 
-      {
-        // this is for the popup when the game is over 
-      }
-      {gameover && (
-        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+            {/* MOVES (SCROLL FIXED) */}
+            <div className="flex-1 min-h-0 p-3 flex flex-col">
+              {!notstarted && (
+                <h2 className="text-center mb-2 text-purple-400 font-semibold text-sm shrink-0">
+                  Moves
+                </h2>
+              )}
 
-          <div className="bg-white w-80 p-6 rounded-xl text-center relative">
+              <div className="flex-1 overflow-y-auto text-xs">
+                <div className="grid grid-cols-3 gap-y-1 text-center">
+                  {moveList.map((move, index) => {
+                    if (index % 2 !== 0) return null
+                    return (
+                      <div key={index} className="contents">
+                        <span className="text-gray-400">
+                          {Math.floor(index / 2) + 1}.
+                        </span>
+                        <span>{move}</span>
+                        <span>{moveList[index + 1] || ""}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
 
-            {/* Close (X) */}
-            <button
-              className="absolute top-2 right-2 text-gray-600"
-              onClick={() => setGameover(false)}
-            >
-              ✕
-            </button>
+            {/* ACTIONS */}
+            <div className="p-3 border-t border-white/10 flex flex-col gap-2 shrink-0">
+              {notstarted && (
+                <button
+                  className={`w-full py-2 rounded-lg text-sm ${
+                    wait
+                      ? "bg-gray-600 text-gray-300"
+                      : "bg-purple-600 hover:bg-purple-700"
+                  }`}
+                  onClick={() => {
+                    socket.send(JSON.stringify({
+                      type: "play_game",
+                      token: localStorage.getItem("token"),
+                    }))
+                  }}
+                >
+                  {wait ? "Waiting..." : "Start Game"}
+                </button>
+              )}
 
-            {/* Game Result */}
-            <h2 className="text-2xl font-bold mb-4">
-              {gamemsg}
-            </h2>
-
-            {/* New Game Button */}
-            <button
-              className="mt-4 w-full py-2 bg-blue-500 text-white rounded"
-              onClick={() => {
-                setGameover(false)
-                setMoveList([])
-                socket.send(JSON.stringify({
-                  type: "play_game",
-                  token: localStorage.getItem("token")
-                }))
-              }}
-            >
-              New Game →
-            </button>
-
+              {!notstarted && !gameover && (
+                <button
+                  className="w-full py-2 bg-red-500 hover:bg-red-600 rounded text-sm"
+                  onClick={() =>
+                    socket.send(JSON.stringify({ type: "resign" }))
+                  }
+                >
+                  Resign
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      )}
-{
-  reconnectingFailed && (
-    
-       <button
-              className="mt-4 w-full py-2 bg-blue-500 text-white rounded"
-              onClick={() => {
-              manualReconnect()
-              }}
-            >
-              Reconnect 
-            </button>
- 
-  
-  )
-}
 
+        {/* GAME OVER */}
+        {gameover && (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-white/10 backdrop-blur-md border border-white/10 w-72 p-5 rounded-xl text-center relative">
+
+              <button
+                className="absolute top-2 right-2 text-gray-300 hover:text-white"
+                onClick={() => setGameover(false)}
+              >
+                ✕
+              </button>
+
+              <h2 className="text-xl font-bold mb-3">
+                {gamemsg}
+              </h2>
+
+              <button
+                className="w-full py-2 bg-purple-600 rounded"
+                onClick={() => {
+                  setGameover(false)
+                  setMoveList([])
+                  socket.send(JSON.stringify({
+                    type: "play_game",
+                    token: localStorage.getItem("token")
+                  }))
+                }}
+              >
+                New Game →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* RECONNECT */}
+        {reconnectingFailed && (
+          <div className="absolute bottom-4 right-4">
+            <button
+              className="px-4 py-2 bg-yellow-500 rounded"
+              onClick={manualReconnect}
+            >
+              Reconnect
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
