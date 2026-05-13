@@ -92,7 +92,7 @@ export default function Home() {
               Watch live games from top players and streamers
             </p>
 
-            <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 text-white rounded-lg">
+            <button  onClick={() => navigate("/watch")} className="w-full bg-orange-500 hover:bg-orange-600 py-3 text-white rounded-lg">
               Watch Now
             </button>
           </div>

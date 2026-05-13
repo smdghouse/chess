@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BsFillPeopleFill } from "react-icons/bs";
-
+import useWatchSocket from "../hooks/watchhook";
 export default function WaitingPage() {
   const navigate = useNavigate();
 
